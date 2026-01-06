@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Feedback Analyzer</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: #334155;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 10px; font-size: 2.5rem; }
+        p { color: #64748b; font-size: 1.1rem; }
+
+        /* Upload Section */
+        .upload-card {
+            background: var(--surface);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            transition: border-color 0.3s;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+
+        .upload-card:hover { border-color: var(--accent); }
+        .upload-icon { font-size: 40px; margin-bottom: 15px; display: block; }
+        
+        input[type="file"] { display: none; }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--primary); }
+        .btn-outline:hover { background: var(--bg); }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Data Table */
+        .table-container {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: none; /* Hidden until data exists */
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 16px; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* Status Badges */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+        .badge-pos { background: #dcfce7; color: #166534; }
+        .badge-neg { background: #fee2e2; color: #991b1b; }
+        .badge-neu { background: #f1f5f9; color: #475569; }
+
+        .actions { margin-top: 20px; display: none; justify-content: flex-end; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Brand Analytics Suite</h1>
+            <p>Upload your customer feedback file (.csv, .txt, .json) for bulk AI analysis.</p>
+        </header>
+
+        <!-- Upload Zone -->
+        <div class="upload-card" onclick="document.getElementById('fileInput').click()">
+            <span class="upload-icon">📂</span>
+            <h3>Click to Upload File</h3>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Supported formats: CSV, TXT (Line by line), JSON</p>
+            <input type="file" id="fileInput" accept=".csv,.txt,.json">
+        </div>
+
+        <!-- Controls -->
+        <div id="controls" style="text-align: center; display: none;">
+            <p id="fileInfo"></p>
+            <button class="btn" onclick="startBatchProcessing()">Start Analysis</button>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-container" id="progressContainer">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <small>Processing...</small>
+                <small id="progressText">0%</small>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="actions" id="actionButtons">
+            <button class="btn btn-outline" onclick="downloadReport()">📥 Download CSV Report</button>
+        </div>
+
+        <div class="table-container" id="resultsTableContainer">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 60%;">Feedback</th>
+                        <th>Sentiment</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Rows will be added here via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
