@@ -1,166 +1,98 @@
 /**
- * STYLESENSE CORE LOGIC
- * Handles File Processing -> AI Batching -> UI Rendering
+ * StyleSense Intelligence - Frontend Logic
+ * This script handles file reading, communication with the Cloudflare Worker,
+ * and rendering the analysis table.
  */
 
-const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/"; 
-let analysisResults = []; 
-
-/**
- * Main Entry Point: Triggered by the "Start Batch Analysis" button
- */
 async function processData() {
-    const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert("Please select a feedback file first.");
+    const fileInput = document.getElementById('filePicker');
+    const status = document.getElementById('status');
+    const tableBody = document.getElementById('tableBody');
+    const resultTable = document.getElementById('resultTable');
+
+    // 1. Validate File Selection
+    if (!fileInput.files[0]) {
+        alert("Please upload a CSV or Text file first.");
         return;
     }
 
-    // --- UI Reset & Show Status ---
-    const statusArea = document.getElementById('statusArea');
-    const tableContainer = document.getElementById('tableContainer');
-    const reportBtn = document.getElementById('reportBtn');
-    const tbody = document.getElementById('tableBody');
-    const progressFill = document.getElementById('progressFill');
-    const statusLabel = document.getElementById('statusLabel');
-
-    statusArea.style.display = 'block';
-    tableContainer.style.display = 'none';
-    reportBtn.style.display = 'none';
-    tbody.innerHTML = "";
+    const file = fileInput.files[0];
+    const rawContent = await file.text();
     
-    updateProgress(10, "Reading and parsing file...");
+    // UI Feedback: Loading State
+    status.innerHTML = `<span style="color: #6366f1;">⏳ Analyzing feedback. Please wait...</span>`;
+    tableBody.innerHTML = "";
+    resultTable.style.display = 'none';
 
     try {
-        // 1. Parse File (Supports XLSX, CSV, JSON)
-        let rawContent = "";
-        const extension = file.name.split('.').pop().toLowerCase();
-
-        if (extension === 'xlsx' || extension === 'xls') {
-            const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data);
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            rawContent = XLSX.utils.sheet_to_csv(firstSheet);
-        } else if (extension === 'json') {
-            const text = await file.text();
-            rawContent = text; // AI will handle JSON string
-        } else {
-            rawContent = await file.text();
-        }
-
-        // 2. Prepare Batch (AI Context Limit Optimization)
-        const rows = rawContent.split('\n');
-        // We take the header + first 50 rows to prevent timeout/token issues
-        const batchData = rows.slice(0, 51).join('\n'); 
-
-        updateProgress(40, `Analyzing ${rows.slice(1, 51).length} reviews via AI...`);
-
-        // 3. Request to Cloudflare Worker
-        const response = await fetch(WORKER_URL, {
+        // 2. Send POST request to Cloudflare Worker
+        const response = await fetch("https://feedbackanalysis.robust9223.workers.dev/", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: batchData })
+            headers: { 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({ data: rawContent })
         });
 
+        // Check if the Worker responded successfully
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Worker Error: ${errorText}`);
+            throw new Error(`Worker Error (${response.status}): ${errorText}`);
         }
 
-        updateProgress(80, "Processing AI insights...");
-
         const result = await response.json();
+
+        // 3. Handle AI Response
+        if (result.error) {
+            throw new Error(result.error.message || result.error);
+        }
+
+        // OpenRouter results usually reside in choices[0].message.content
+        let aiContent = result.choices[0].message.content;
         
-        // 4. Clean & Parse AI Output
-        // Worker returns { output: "JSON_STRING" }
-        let cleanJson = result.output.replace(/```json/g, "").replace(/```/g, "").trim();
-        const parsed = JSON.parse(cleanJson);
+        // Sometimes AI includes markdown code blocks (```json ... ```), we must remove them
+        if (aiContent.includes("```")) {
+            aiContent = aiContent.replace(/```json|```/g, "").trim();
+        }
+
+        const parsedData = JSON.parse(aiContent);
         
-        // Save results for the report generator
-        analysisResults = parsed.analysis || [];
+        // Ensure we are working with an array
+        const dataArray = Array.isArray(parsedData) ? parsedData : (parsedData.reports || Object.values(parsedData)[0]);
 
-        // 5. Render to Table
-        renderTable();
+        if (!Array.isArray(dataArray)) {
+            throw new Error("AI did not return a valid list of feedback. Try again.");
+        }
 
-        // 6. Finalize UI
-        updateProgress(100, "Analysis Complete!");
-        tableContainer.style.display = 'block';
-        reportBtn.style.display = 'inline-flex';
+        // 4. Render Table Rows
+        tableBody.innerHTML = dataArray.map(item => `
+            <tr>
+                <td><b>${item.id || 'N/A'}</b></td>
+                <td>${item.quality || 'N/A'}</td>
+                <td>${item.fabric || 'N/A'}</td>
+                <td>${item.delivery || 'N/A'}</td>
+                <td>${item.changes || 'No changes requested'}</td>
+                <td><span class="badge ${(item.priority || 'low').toLowerCase()}">${item.priority || 'Low'}</span></td>
+            </tr>
+        `).join('');
 
-    } catch (error) {
-        console.error("System Error:", error);
-        updateProgress(100, "Error: " + error.message, true);
+        // 5. Show Results
+        resultTable.style.display = 'table';
+        status.innerHTML = `<span style="color: #15803d;">✅ Analysis Complete!</span>`;
+
+    } catch (err) {
+        // Detailed Error Reporting
+        console.error("Full Script Error:", err);
+        status.innerHTML = `<span style="color: #b91c1c;">❌ Error: ${err.message}</span>`;
     }
 }
 
 /**
- * UI Helper: Updates the progress bar
+ * Optional: Reset UI function
  */
-function updateProgress(percent, text, isError = false) {
-    const fill = document.getElementById('progressFill');
-    const label = document.getElementById('statusLabel');
-    fill.style.width = percent + "%";
-    label.innerText = text;
-    if (isError) fill.style.backgroundColor = "#ef4444";
-}
-
-/**
- * UI Helper: Injects rows into the HTML table
- */
-function renderTable() {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = "";
-
-    analysisResults.forEach(item => {
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-50 transition-colors";
-
-        // Logic for sentiment color
-        const qualityColor = item.cloth_quality === "Good" ? "text-emerald-600" : (item.cloth_quality === "Bad" ? "text-red-600" : "text-amber-600");
-
-        row.innerHTML = `
-            <td class="px-6 py-4 font-bold text-slate-700">${item.clothing_id || 'N/A'}</td>
-            <td class="px-6 py-4">
-                <div class="flex flex-col">
-                    <span class="text-xs font-bold uppercase ${qualityColor}">Fabric: ${item.fabric_quality}</span>
-                    <span class="text-[10px] text-slate-400">Delivery: ${item.delivery_service}</span>
-                </div>
-            </td>
-            <td class="px-6 py-4">
-                <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded font-medium border border-indigo-100">
-                    ${item.updates_required || 'No updates'}
-                </span>
-            </td>
-            <td class="px-6 py-4 text-slate-500 italic text-xs leading-relaxed">
-                "${item.feedback_summary}"
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-/**
- * Download Logic: Generates a .txt report
- */
-function generateReport() {
-    if (!analysisResults.length) return;
-    
-    let content = "STYLESENSE INTELLIGENCE REPORT\n==============================\n\n";
-    analysisResults.forEach(r => {
-        content += `PRODUCT ID: ${r.clothing_id}\n`;
-        content += `QUALITY: Cloth(${r.cloth_quality}), Fabric(${r.fabric_quality})\n`;
-        content += `SERVICE: ${r.delivery_service}\n`;
-        content += `ACTION: ${r.updates_required}\n`;
-        content += `SUMMARY: ${r.feedback_summary}\n`;
-        content += `------------------------------\n\n`;
-    });
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `StyleSense_Report_${Date.now()}.txt`;
-    a.click();
+function resetAnalyzer() {
+    document.getElementById('filePicker').value = "";
+    document.getElementById('status').innerText = "Waiting for file...";
+    document.getElementById('resultTable').style.display = 'none';
+    document.getElementById('tableBody').innerHTML = "";
 }
