@@ -1,9 +1,9 @@
 /**
  * BRAND INTELLIGENCE SYSTEM - CORE LOGIC
- * Handles multi-format data parsing, AI communication via Cloudflare/OpenRouter, and reporting.
+ * Handles multi-format data parsing, AI communication via Cloudflare, and reporting.
  */
 
-// Your Cloudflare Worker URL (Connected to OpenRouter)
+// Finalized Cloudflare Worker URL
 const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/"; 
 
 // Global storage for report generation
@@ -117,13 +117,14 @@ async function callAI(text) {
         if (!response.ok) throw new Error("Worker Connection Failed");
 
         const data = await response.json();
+        // Handle output from OpenRouter structure
         const rawContent = data.output || "";
 
         // Strip markdown backticks, newlines, and common model prefixes
         // Example output to parse: "Type: Men | Status: Fix Required | Aspect: Fit | Action: Adjust size"
         const cleaned = rawContent
             .replace(/```/g, "")
-            .replace(/^(Result|Output|Analysis|Review|Feedback):/i, "")
+            .replace(/^(Result|Output|Analysis|Review):/i, "")
             .trim();
         
         // Parse the structured format
