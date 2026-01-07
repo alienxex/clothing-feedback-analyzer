@@ -1,248 +1,197 @@
 /**
- * BRAND INTELLIGENCE SYSTEM - CORE LOGIC
- * Handles multi-format data parsing, AI communication via Cloudflare, and reporting.
+ * BRAND INTELLIGENCE SYSTEM - BATCH LOGIC
+ * Aggregates feedback by Clothing ID and generates a comprehensive report.
  */
 
-// Finalized Cloudflare Worker URL
-const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/"; 
+// ---------------------------------------------------------
+// CONFIGURATION: PASTE YOUR CLOUDFLARE WORKER URL HERE
+// ---------------------------------------------------------
+const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/";
+// ---------------------------------------------------------
 
-// Global storage for report generation
-let processedData = []; 
+// Store final analyzed data
+let analysisResults = [];
 
 /**
- * Main function triggered by the "Start AI Analysis" button
+ * Main Trigger
  */
 async function processData() {
-    const fileInput = document.getElementById('fileInput');
+    const fileInput = document.getElementById("fileInput");
     const file = fileInput.files[0];
-    
+
     if (!file) {
         alert("Please select a feedback file first.");
         return;
     }
 
-    const extension = file.name.split('.').pop().toLowerCase();
-    let rawRows = [];
+    /* ---------- UI RESET ---------- */
+    const statusArea = document.getElementById("statusArea");
+    const tableContainer = document.getElementById("tableContainer");
+    const reportBtn = document.getElementById("reportBtn");
+    const tbody = document.getElementById("tableBody");
+    const statusLabel = document.getElementById("statusLabel");
+    const progressFill = document.getElementById("progressFill");
 
-    // 1. Reset & Initialize UI
-    const statusArea = document.getElementById('statusArea');
-    const tableContainer = document.getElementById('tableContainer');
-    const reportBtn = document.getElementById('reportBtn');
-    const tbody = document.getElementById('tableBody');
-    const statusLabel = document.getElementById('statusLabel');
+    if (statusArea) statusArea.style.display = "block";
+    if (tableContainer) tableContainer.style.display = "block";
+    if (reportBtn) reportBtn.style.display = "none";
+    if (tbody) tbody.innerHTML = "";
+    if (progressFill) progressFill.style.width = "5%";
 
-    if(statusArea) statusArea.style.display = 'block';
-    if(tableContainer) tableContainer.style.display = 'block';
-    if(reportBtn) reportBtn.style.display = 'none';
-    if(tbody) tbody.innerHTML = "";
-    
-    processedData = [];
+    analysisResults = [];
+    statusLabel.innerText = "Reading and batching data...";
 
     try {
-        // 2. Multi-format File Parsing Logic
-        if (extension === 'xlsx' || extension === 'xls') {
+        /* ---------- FILE PARSING ---------- */
+        let csvText = "";
+        const extension = file.name.split(".").pop().toLowerCase();
+
+        if (extension === "xlsx" || extension === "xls") {
             const data = await file.arrayBuffer();
-            // Use the global XLSX variable from the CDN script in index.html
             const workbook = XLSX.read(data);
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(firstSheet);
-            // Convert row objects to strings, taking the first 10 for batch analysis
-            rawRows = json.slice(0, 10).map(obj => Object.values(obj).join(" "));
-        } else if (extension === 'json') {
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            csvText = XLSX.utils.sheet_to_csv(sheet);
+
+        } else if (extension === "json") {
             const text = await file.text();
             const json = JSON.parse(text);
-            // Handle array of objects or array of strings
-            rawRows = json.slice(0, 10).map(obj => (typeof obj === 'object' ? Object.values(obj).join(" ") : obj));
+            csvText = JSON.stringify(json.slice(0, 50));
+
         } else {
-            // Default to CSV / Text
-            const text = await file.text();
-            // Split by newline, trim, filter empty rows, skip header (slice 1), take 10 rows
-            rawRows = text.split('\n').map(r => r.trim()).filter(r => r !== "").slice(1, 11);
+            csvText = await file.text();
         }
 
-        if (rawRows.length === 0) {
-            alert("No data found in file or file is empty.");
-            return;
+        /* ---------- BATCH PREPARATION ---------- */
+        const rows = csvText.split("\n").filter(r => r.trim());
+        if (rows.length < 2) {
+            throw new Error("Insufficient data in file.");
         }
 
-        // 3. Batch Process rows through the AI Engine
-        for (let i = 0; i < rawRows.length; i++) {
-            const rowContent = rawRows[i].toString();
-            
-            // Update UI status
-            if(statusLabel) statusLabel.innerText = `Analyzing Record ${i + 1} of ${rawRows.length}...`;
-            
-            // Call AI via Cloudflare Worker
-            const aiResult = await callAI(rowContent);
-            
-            // Save to memory for the final report
-            processedData.push({ original: rowContent, ai: aiResult });
-            
-            // Render row in the table
-            addTableRowToDashboard(rowContent, aiResult);
+        const header = rows[0];
+        // Limit to 50 rows to prevent timeout/token limits
+        const dataRows = rows.slice(1, 51).join("\n");
+        const batchPayload = header + "\n" + dataRows;
 
-            // Update Progress Bar
-            const progress = Math.round(((i + 1) / rawRows.length) * 100);
-            const fill = document.getElementById('progressFill');
-            const text = document.getElementById('progressText');
-            if(fill) fill.style.width = `${progress}%`;
-            if(text) text.innerText = `${progress}%`;
-        }
+        statusLabel.innerText = `Sending ${rows.slice(1, 51).length} reviews to AI...`;
+        progressFill.style.width = "40%";
 
-        // 4. Finalize Analysis
-        if(statusLabel) {
-            statusLabel.innerText = "Intelligence Analysis Complete";
-            statusLabel.classList.remove('analyzing-text');
-        }
-        if(reportBtn) reportBtn.style.display = 'inline-flex';
-
-    } catch (err) {
-        console.error("Data Processing Error:", err);
-        if(statusLabel) statusLabel.innerText = "Error parsing file. Please check format.";
-    }
-}
-
-/**
- * Communicates with the Cloudflare Worker -> OpenRouter
- * Parses the specialized AI response string
- */
-async function callAI(text) {
-    try {
-        const response = await fetch(WORKER_URL, {
+        /* ---------- AI CALL ---------- */
+        const aiResponse = await fetch(WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: text })
+            body: JSON.stringify({ text: batchPayload })
         });
 
-        if (!response.ok) throw new Error("Worker Connection Failed");
+        if (!aiResponse.ok) {
+            throw new Error("Cloudflare Worker request failed.");
+        }
 
-        const data = await response.json();
-        // Handle output from OpenRouter structure
-        const rawContent = data.output || "";
+        progressFill.style.width = "70%";
+        statusLabel.innerText = "Processing AI insights...";
 
-        // Strip markdown backticks, newlines, and common model prefixes
-        // Example output to parse: "Type: Men | Status: Fix Required | Aspect: Fit | Action: Adjust size"
-        const cleaned = rawContent
+        const workerResult = await aiResponse.json();
+        const rawOutput = workerResult.output || "";
+
+        /* ---------- AI OUTPUT CLEANING ---------- */
+        const cleaned = rawOutput
+            .replace(/```json/gi, "")
             .replace(/```/g, "")
-            .replace(/^(Result|Output|Analysis|Review):/i, "")
             .trim();
-        
-        // Parse the structured format
-        const info = {};
-        cleaned.split('|').forEach(part => {
-            const segments = part.split(':');
-            if (segments.length >= 2) {
-                // Key is the first part, Value is the rest (joined back in case of extra colons)
-                const key = segments[0].trim().toLowerCase();
-                const value = segments.slice(1).join(':').trim();
-                info[key] = value;
-            }
-        });
 
-        return {
-            type: info.type || "General",
-            status: info.status || "Review Needed",
-            aspect: info.aspect || "Quality Check",
-            action: info.action || "Evaluate feedback manually",
-            visual: info.visual_edit || "none"
-        };
-    } catch (e) {
-        console.error("AI Communication Failure:", e);
-        return { 
-            type: "Offline", 
-            status: "Error", 
-            aspect: "N/A", 
-            action: "Check Worker/API Connection",
-            visual: "none"
-        };
+        let parsedResult;
+        try {
+            parsedResult = JSON.parse(cleaned);
+        } catch (e) {
+            console.error("Raw AI Output:", rawOutput);
+            throw new Error("AI response was not valid JSON.");
+        }
+
+        /* ---------- NORMALIZATION ---------- */
+        // Expected format: [{ clothing_id, sentiment, key_issues, summary }]
+
+        if (!Array.isArray(parsedResult)) {
+            throw new Error("Unexpected AI output format (Not an array).");
+        }
+
+        analysisResults = parsedResult;
+
+        /* ---------- TABLE RENDER ---------- */
+        parsedResult.forEach(item => addRow(item));
+
+        progressFill.style.width = "100%";
+        statusLabel.innerText = "Batch intelligence analysis complete.";
+        reportBtn.style.display = "inline-flex";
+
+    } catch (error) {
+        console.error("Batch Processing Error:", error);
+        statusLabel.innerText = "Error: " + error.message;
+        alert("Processing Failed: " + error.message);
     }
 }
 
 /**
- * Dynamically adds a new row to the Results table
+ * Adds a summary row to the dashboard table
  */
-function addTableRowToDashboard(originalText, ai) {
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
+function addRow(item) {
+    const tbody = document.getElementById("tableBody");
+    const tr = document.createElement("tr");
 
-    const tr = document.createElement('tr');
-    
-    // Logic for Status Badges
-    const statusLower = (ai.status || "").toLowerCase();
-    const isFixNeeded = statusLower.includes("fix") || statusLower.includes("fail") || statusLower.includes("check");
-    const badgeClass = isFixNeeded ? "status-fix" : "status-ok";
-    
-    // Logic for visual edit icon
-    const visualLower = (ai.visual || "none").toLowerCase();
-    const hasVisual = visualLower !== "none" && visualLower !== "n/a" && visualLower !== "";
-    const designIcon = hasVisual ? '<span class="icon" title="Visual Edit Suggested">🎨</span>' : "";
+    // Helper for cells
+    const createCell = (text, className = "") => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        td.className = `px-6 py-4 text-sm border-b border-slate-100 ${className}`;
+        return td;
+    };
 
-    tr.innerHTML = `
-        <td>
-            <span class="type-pill">${ai.type}</span><br>
-            <div style="margin-top:8px; color:#64748b; font-size:0.8rem;">${originalText.substring(0, 85)}...</div>
-        </td>
-        <td><span class="badge ${badgeClass}">${ai.status}</span></td>
-        <td><strong>${ai.aspect}</strong></td>
-        <td class="action-cell">${ai.action} ${designIcon}</td>
-    `;
+    // 1. Clothing ID
+    tr.appendChild(createCell(item.clothing_id || "N/A", "font-medium text-slate-700"));
+
+    // 2. Sentiment (Color Coded)
+    let sentClass = "text-slate-600";
+    const sent = (item.sentiment || "Unknown").toLowerCase();
+    if (sent.includes('positive')) sentClass = "text-green-600 font-bold";
+    else if (sent.includes('negative')) sentClass = "text-red-600 font-bold";
+    else if (sent.includes('mixed')) sentClass = "text-yellow-600 font-bold";
+    
+    tr.appendChild(createCell(item.sentiment || "Unknown", sentClass));
+
+    // 3. Key Issues
+    const issues = Array.isArray(item.key_issues) ? item.key_issues.join(", ") : (item.key_issues || "—");
+    tr.appendChild(createCell(issues, "text-slate-600"));
+
+    // 4. Summary
+    tr.appendChild(createCell(item.summary || "", "text-slate-500 italic"));
+
     tbody.appendChild(tr);
 }
 
 /**
- * Creates and downloads a text-based Brand Intelligence Report
+ * Generates downloadable intelligence report
  */
 function generateReport() {
-    if (processedData.length === 0) {
-        alert("No analysis data available to export.");
-        return;
-    }
+    let report = "BRAND INTELLIGENCE REPORT\n";
+    report += "Generated by StyleSense AI\n";
+    report += "========================================\n\n";
 
-    const timestamp = new Date().toLocaleString();
-    let reportText = `BRAND INTELLIGENCE ANALYSIS REPORT\n`;
-    reportText += `Generated: ${timestamp}\n`;
-    reportText += "=".repeat(50) + "\n\n";
-
-    processedData.forEach((item, index) => {
-        reportText += `${index + 1}. [${item.ai.type.toUpperCase()}] STATUS: ${item.ai.status}\n`;
-        reportText += `   ASPECT: ${item.ai.aspect}\n`;
-        reportText += `   ACTION: ${item.ai.action}\n`;
-        if (item.ai.visual && item.ai.visual.toLowerCase() !== 'none') {
-            reportText += `   VISUAL EDIT: ${item.ai.visual}\n`;
-        }
-        reportText += `   FEEDBACK: "${item.original.trim()}"\n`;
-        reportText += "-".repeat(30) + "\n";
+    analysisResults.forEach((item, index) => {
+        report += `PRODUCT #${index + 1}\n`;
+        report += `ID:        ${item.clothing_id}\n`;
+        report += `Sentiment: ${item.sentiment}\n`;
+        report += `Issues:    ${Array.isArray(item.key_issues) ? item.key_issues.join(", ") : item.key_issues}\n`;
+        report += `Summary:   ${item.summary}\n`;
+        report += "----------------------------------------\n";
     });
 
-    const blob = new Blob([reportText], { type: "text/plain" });
+    const blob = new Blob([report], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Design_Intelligence_Report_${new Date().getTime()}.txt`;
-    link.click();
-}
 
-/**
- * Event Listener for file selection UI changes
- */
-document.addEventListener('DOMContentLoaded', () => {
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                // Show the processing controls
-                const controls = document.getElementById('controls');
-                if (controls) controls.style.display = 'flex';
-                
-                // Reset UI sections for a fresh run
-                const statusArea = document.getElementById('statusArea');
-                const tableContainer = document.getElementById('tableContainer');
-                const reportBtn = document.getElementById('reportBtn');
-                
-                if(statusArea) statusArea.style.display = 'none';
-                if(tableContainer) tableContainer.style.display = 'none';
-                if(reportBtn) reportBtn.style.display = 'none';
-            }
-        });
-    }
-});
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "brand_intelligence_report.txt";
+    document.body.appendChild(a); // Required for Firefox
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+}
