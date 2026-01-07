@@ -3,151 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brand Intelligence | AI Design Suite</title>
-    <!-- Spreadsheet library for .xlsx and .xls support -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>StyleSense - Clothing Feedback Analyzer</title>
+    
+    <!-- SheetJS for reading Excel files -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --slate-900: #0f172a;
-            --indigo-600: #4f46e5;
-            --rose-500: #f43f5e;
-            --emerald-500: #10b981;
-            --bg: #f8fafc;
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg);
-            color: #334155;
-            margin: 0;
-            padding: 40px 20px;
-        }
-
-        .container { max-width: 1100px; margin: 0 auto; }
-
-        header { text-align: center; margin-bottom: 50px; }
-        h1 { font-size: 2.5rem; color: var(--slate-900); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; }
-        p { color: #64748b; font-size: 1.1rem; }
-
-        /* Professional Upload Area */
-        .upload-zone {
-            background: white;
-            border: 2px dashed #e2e8f0;
-            border-radius: 24px;
-            padding: 60px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-        }
-        .upload-zone:hover { border-color: var(--indigo-600); background: #f1f5f9; }
-        .upload-icon { font-size: 48px; display: block; margin-bottom: 15px; }
-
-        input[type="file"] { display: none; }
-
-        /* Controls */
-        .controls-area {
-            display: none;
-            text-align: center;
-            margin: 30px 0;
-            gap: 15px;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            transition: 0.2s;
-            font-size: 0.95rem;
-        }
-        .btn-primary { background: var(--slate-900); color: white; }
-        .btn-report { background: var(--indigo-600); color: white; display: none; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        /* Status & Progress */
-        .status-area {
-            display: none;
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 30px;
-        }
-        .progress-meta { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; font-size: 0.9rem; }
-        .progress-track { height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--indigo-600); width: 0%; transition: width 0.4s ease; }
-
-        /* Results Table */
-        .table-container {
-            display: none;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            border: 1px solid #f1f5f9;
-        }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: #f8fafc; padding: 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; border-bottom: 1px solid #f1f5f9; }
-        td { padding: 20px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; vertical-align: top; }
-
-        .type-pill { font-size: 0.65rem; font-weight: 800; padding: 3px 8px; background: #eff6ff; color: var(--indigo-600); border-radius: 4px; text-transform: uppercase; }
-        .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-        .status-fix { background: #fee2e2; color: var(--rose-500); }
-        .status-ok { background: #dcfce7; color: var(--emerald-500); }
-        
-        .analyzing-text { color: var(--indigo-600); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8 min-h-screen text-slate-800 bg-slate-50">
 
-    <div class="container">
-        <header>
-            <h1>Brand Intelligence AI</h1>
-            <p>Unified Analysis Suite for Multi-Format Collection Data</p>
-        </header>
-
-        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-            <span class="upload-icon">📄</span>
-            <h3>Connect Intelligence Source</h3>
-            <p>Drag & Drop or Click to upload CSV, JSON, or Excel</p>
-            <input type="file" id="fileInput" accept=".csv, .json, .xlsx, .xls">
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center mb-8 pt-4">
+            <h1 class="text-3xl font-bold text-indigo-700 tracking-tight">StyleSense Intelligence</h1>
+            <p class="text-slate-500 mt-2">Upload customer feedback to detect Fabric, Color, and Design trends.</p>
         </div>
 
-        <div class="controls-area" id="controls">
-            <button class="btn btn-primary" onclick="processData()">⚡ Start AI Analysis</button>
-            <button class="btn btn-report" id="reportBtn" onclick="generateReport()">📄 Export Intelligence Report</button>
-        </div>
-
-        <div class="status-area" id="statusArea">
-            <div class="progress-meta">
-                <span id="statusLabel" class="analyzing-text">Initializing Engine...</span>
-                <span id="progressText">0%</span>
+        <!-- Upload & Action -->
+        <div class="glass p-8 rounded-xl shadow-sm flex flex-col items-center justify-center gap-6 bg-white max-w-2xl mx-auto">
+            <div class="w-full text-center">
+                <label class="block text-lg font-bold text-slate-700 mb-4">Upload Feedback File</label>
+                
+                <div class="relative group">
+                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .json, .txt" 
+                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition cursor-pointer border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 p-8 text-center"/>
+                </div>
+                <p class="text-xs text-slate-400 mt-3">Supports Excel (.xlsx), CSV, JSON, or Text files.</p>
             </div>
-            <div class="progress-track">
-                <div class="progress-fill" id="progressFill"></div>
+            
+            <button onclick="processData()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3 rounded-lg font-bold shadow-lg shadow-indigo-200 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 whitespace-nowrap text-lg">
+                <span>Start Analysis</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+
+        <!-- Progress Bar (Hidden initially) -->
+        <div id="statusArea" style="display: none;" class="glass p-6 rounded-xl shadow-sm fade-in bg-white max-w-4xl mx-auto">
+            <div class="flex justify-between mb-2">
+                <span id="statusLabel" class="font-semibold text-indigo-600 flex items-center gap-2">
+                    <!-- Spinner Icon is injected by JS -->
+                    Initializing...
+                </span>
+                <span id="progressText" class="text-slate-500 font-mono">0%</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                <div id="progressFill" class="bg-indigo-600 h-3 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(79,70,229,0.5)]" style="width: 0%"></div>
             </div>
         </div>
 
-        <div class="table-container" id="tableContainer">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 45%;">Record Intelligence</th>
-                        <th style="width: 15%;">System Status</th>
-                        <th style="width: 15%;">Target Aspect</th>
-                        <th style="width: 25%;">Recommended Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
+        <!-- Download Report Button (Hidden initially) -->
+        <div class="text-center">
+            <button id="reportBtn" onclick="generateReport()" style="display: none;" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg shadow-lg shadow-emerald-200 transition items-center gap-2 fade-in font-medium mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                Download Report (.txt)
+            </button>
         </div>
+
+        <!-- Results Table (Hidden initially) -->
+        <div id="tableContainer" style="display: none;" class="glass rounded-xl shadow-sm overflow-hidden fade-in border border-slate-200 bg-white max-w-5xl mx-auto">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-1/2">Customer Feedback</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-1/2">AI Analysis</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="bg-white divide-y divide-slate-100 text-sm">
+                        <!-- Rows injected here by script.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
+    <!-- LINK TO YOUR EXTERNAL SCRIPT -->
     <script src="script.js"></script>
 </body>
 </html>
