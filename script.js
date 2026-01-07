@@ -1,31 +1,27 @@
-**
+/**
  * StyleSense - Client Side Logic
  * Handles file uploads, UI updates, and communication with the Cloudflare Worker.
  */
 
+// ---------------------------------------------------------
+// CONFIGURATION: PASTE YOUR CLOUDFLARE WORKER URL HERE
+// ---------------------------------------------------------
+const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/"; 
+// ^^^ Replace the text inside quotes with your actual URL ^^^
+// ---------------------------------------------------------
+
 let processedData = [];
-
-// Load saved URL on startup
-window.onload = () => {
-    const savedUrl = localStorage.getItem('workerUrl');
-    if (savedUrl) document.getElementById('workerUrlInput').value = savedUrl;
-};
-
-function saveUrl(url) {
-    localStorage.setItem('workerUrl', url.trim());
-}
 
 /**
  * Main function to read file and send data to AI
  */
 async function processData() {
-    const workerUrl = document.getElementById('workerUrlInput').value.trim();
     const fileInput = document.getElementById("fileInput");
     const file = fileInput.files[0];
 
-    if (!workerUrl) {
-        alert("Please paste your Cloudflare Worker URL first.");
-        document.getElementById('workerUrlInput').focus();
+    // Check if user forgot to set the URL in the code
+    if (WORKER_URL.includes("your-worker-name") || WORKER_URL === "") {
+        alert("Configuration Error: Please open script.js and paste your Cloudflare Worker URL into the WORKER_URL variable.");
         return;
     }
 
@@ -67,8 +63,7 @@ async function processData() {
             rawRows = text.split("\n").filter(r => r.trim().length > 5);
         }
 
-        // Limit for demo safety (prevent huge API usage). 
-        // Remove .slice(0, 20) if you want to process the whole file.
+        // Limit for demo safety. Remove .slice(0, 20) to process the whole file.
         const limitedRows = rawRows.slice(0, 20); 
 
         // --- 2. AI PROCESSING LOOP ---
@@ -81,7 +76,7 @@ async function processData() {
                 Analyzing Feedback ${i + 1} of ${limitedRows.length}...`;
 
             // Call Cloudflare Worker
-            const aiResult = await callAI(workerUrl, rowContent);
+            const aiResult = await callAI(rowContent);
 
             // Save & Display Results
             processedData.push({ original: rowContent, ai: aiResult });
@@ -107,9 +102,9 @@ async function processData() {
 /**
  * Sends a single text string to the Worker URL
  */
-async function callAI(url, text) {
+async function callAI(text) {
     try {
-        const response = await fetch(url, {
+        const response = await fetch(WORKER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
@@ -138,7 +133,7 @@ function addTableRow(original, ai) {
     const tr = document.createElement("tr");
     
     // Color code sentiment based on keywords
-    let sentimentClass = "text-gray-700";
+    let sentimentClass = "text-slate-700";
     const lowerAi = ai.toLowerCase();
     
     if (lowerAi.includes("positive")) sentimentClass = "text-green-700 font-medium";
@@ -146,8 +141,8 @@ function addTableRow(original, ai) {
     else if (lowerAi.includes("mixed")) sentimentClass = "text-yellow-600 font-medium";
 
     tr.innerHTML = `
-        <td class="px-6 py-4 text-gray-600 border-b border-gray-100">${original}</td>
-        <td class="px-6 py-4 ${sentimentClass} border-b border-gray-100">${ai}</td>
+        <td class="px-6 py-4 text-slate-600 border-b border-slate-100">${original}</td>
+        <td class="px-6 py-4 ${sentimentClass} border-b border-slate-100">${ai}</td>
     `;
     tbody.appendChild(tr);
 }
