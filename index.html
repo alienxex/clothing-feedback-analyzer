@@ -3,163 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Feedback Analyzer</title>
+    <title>Smart Designer AI | Brand Analytics</title>
+    <!-- Modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0f172a;
-            --accent: #3b82f6;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --border: #e2e8f0;
+            --primary-dark: #0f172a;
+            --accent-blue: #3b82f6;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --bg-light: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: #334155;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
             margin: 0;
+            line-height: 1.5;
             padding: 40px 20px;
         }
 
-        .container {
-            max-width: 1000px;
+        .app-container {
+            max-width: 1100px;
             margin: 0 auto;
         }
 
+        /* Header Section */
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 48px;
         }
 
-        h1 { color: var(--primary); margin-bottom: 10px; font-size: 2.5rem; }
-        p { color: #64748b; font-size: 1.1rem; }
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            letter-spacing: -0.025em;
+            margin: 0 0 12px 0;
+        }
 
-        /* Upload Section */
-        .upload-card {
-            background: var(--surface);
-            border: 2px dashed var(--border);
-            border-radius: 16px;
-            padding: 40px;
+        header p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Upload Card Styling */
+        .upload-section {
+            background: var(--card-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 20px;
+            padding: 60px 40px;
             text-align: center;
-            transition: border-color 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
-            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 32px;
         }
 
-        .upload-card:hover { border-color: var(--accent); }
-        .upload-icon { font-size: 40px; margin-bottom: 15px; display: block; }
-        
-        input[type="file"] { display: none; }
-        
-        .btn {
-            background: var(--primary);
+        .upload-section:hover {
+            border-color: var(--accent-blue);
+            background-color: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .upload-section h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .upload-section p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Action Buttons */
+        .action-container {
+            display: none;
+            text-align: center;
+            margin-bottom: 32px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-dark);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 32px;
+            font-size: 1rem;
             font-weight: 600;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 20px;
-            transition: opacity 0.2s;
+            transition: background 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
         }
-        .btn:hover { opacity: 0.9; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--primary); }
-        .btn-outline:hover { background: var(--bg); }
 
-        /* Progress Bar */
-        .progress-container {
-            display: none;
-            margin: 20px 0;
+        .btn-primary:hover {
+            background-color: #1e293b;
         }
-        .progress-bar {
-            height: 8px;
-            background: var(--border);
-            border-radius: 4px;
+
+        /* Progress Bar Section */
+        .progress-section {
+            display: none;
+            margin: 24px 0;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        #statusLabel {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--accent-blue);
+        }
+
+        .progress-track {
+            height: 10px;
+            background: #f1f5f9;
+            border-radius: 5px;
             overflow: hidden;
         }
+
         .progress-fill {
             height: 100%;
-            background: var(--accent);
+            background: var(--accent-blue);
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.4s ease;
         }
 
-        /* Data Table */
-        .table-container {
-            background: var(--surface);
-            border-radius: 12px;
+        /* Results Table */
+        .results-container {
+            display: none;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            display: none; /* Hidden until data exists */
+            animation: slideUp 0.5s ease;
         }
 
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 16px; border-bottom: 1px solid var(--border); }
-        th { background: #f1f5f9; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        /* Status Badges */
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
-        .badge-pos { background: #dcfce7; color: #166534; }
-        .badge-neg { background: #fee2e2; color: #991b1b; }
-        .badge-neu { background: #f1f5f9; color: #475569; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-        .actions { margin-top: 20px; display: none; justify-content: flex-end; }
+        th {
+            background: #f8fafc;
+            padding: 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        /* Badge and Tag Styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-pos { background: #dcfce7; color: #15803d; }
+        .badge-neg { background: #fee2e2; color: #b91c1c; }
+
+        .type-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            background: #eff6ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        .action-text {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            td, th { padding: 12px; font-size: 0.8rem; }
+            .btn-primary { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="app-container">
         <header>
-            <h1>Brand Analytics Suite</h1>
-            <p>Upload your customer feedback file (.csv, .txt, .json) for bulk AI analysis.</p>
+            <h1>Smart Designer AI</h1>
+            <p>Professional design fixes for Men's, Women's, and Children's collections.</p>
         </header>
 
-        <!-- Upload Zone -->
-        <div class="upload-card" onclick="document.getElementById('fileInput').click()">
+        <!-- Upload Interface -->
+        <div class="upload-section" onclick="document.getElementById('fileInput').click()">
             <span class="upload-icon">📂</span>
-            <h3>Click to Upload File</h3>
-            <p style="font-size: 0.9rem; margin-top: 10px;">Supported formats: CSV, TXT (Line by line), JSON</p>
-            <input type="file" id="fileInput" accept=".csv,.txt,.json">
+            <h3>Drop your feedback file here</h3>
+            <p>Upload your <code>clothing_reviews.csv.csv</code> to begin AI analysis</p>
+            <input type="file" id="fileInput" accept=".csv">
         </div>
 
-        <!-- Controls -->
-        <div id="controls" style="text-align: center; display: none;">
-            <p id="fileInfo"></p>
-            <button class="btn" onclick="startBatchProcessing()">Start Analysis</button>
+        <!-- Start Processing Control -->
+        <div class="action-container" id="controls">
+            <button class="btn-primary" id="startBtn" onclick="startBatchProcessing()">
+                Begin Designer Analysis
+            </button>
         </div>
 
-        <!-- Progress -->
-        <div class="progress-container" id="progressContainer">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <small>Processing...</small>
-                <small id="progressText">0%</small>
+        <!-- Visual Progress Bar -->
+        <div class="progress-section" id="progressContainer">
+            <div class="progress-header">
+                <span id="statusLabel">Initializing AI Brain...</span>
+                <span id="progressText" style="font-weight: 700;">0%</span>
             </div>
-            <div class="progress-bar">
+            <div class="progress-track">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
         </div>
 
-        <!-- Results -->
-        <div class="actions" id="actionButtons">
-            <button class="btn btn-outline" onclick="downloadReport()">📥 Download CSV Report</button>
-        </div>
-
-        <div class="table-container" id="resultsTableContainer">
-            <table id="resultsTable">
+        <!-- Analysis Dashboard Table -->
+        <div class="results-container" id="resultsTableContainer">
+            <table>
                 <thead>
                     <tr>
-                        <th style="width: 60%;">Feedback</th>
-                        <th>Sentiment</th>
-                        <th>Confidence</th>
+                        <th style="width: 45%;">Category & Feedback</th>
+                        <th style="width: 15%;">AI Status</th>
+                        <th style="width: 15%;">Issue Aspect</th>
+                        <th style="width: 25%;">Recommended Action</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <!-- Rows will be added here via JS -->
+                    <!-- AI results will be injected here -->
                 </tbody>
             </table>
         </div>
     </div>
 
+    <!-- External Script Reference -->
     <script src="script.js"></script>
 </body>
 </html>
