@@ -1,10 +1,9 @@
+// Finalized Cloudflare Worker URL
+const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/"; 
+
 /**
- * Smart Designer AI - Website Logic
- * Final Version: Fixed parsing for raw AI output
+ * Main function to trigger batch processing of the CSV file
  */
-
-const WORKER_URL = "[https://clothing-analyzer.robust9223.workers.dev/](https://clothing-analyzer.robust9223.workers.dev/)"; 
-
 async function startBatchProcessing() {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput.files[0]) {
@@ -15,9 +14,10 @@ async function startBatchProcessing() {
     const file = fileInput.files[0];
     const text = await file.text();
     
-    // Process top 10 rows to ensure fast response and UI stability
+    // Split into rows and skip the header (Process first 10 rows for testing)
     const rows = text.split('\n').filter(row => row.trim() !== "").slice(1, 11); 
 
+    // UI Updates: Show progress and results table
     document.getElementById('progressContainer').style.display = 'block';
     document.getElementById('resultsTableContainer').style.display = 'block';
     
@@ -25,10 +25,15 @@ async function startBatchProcessing() {
     tableBody.innerHTML = "";
 
     for (let i = 0; i < rows.length; i++) {
-        const rawRow = rows[i].trim();
-        const aiData = await analyzeFeedback(rawRow);
-        addTableRow(rawRow, aiData);
+        const rowData = rows[i].trim();
         
+        // Step 1: Send text to AI via Cloudflare Worker
+        const aiResponse = await analyzeFeedbackWithAI(rowData);
+        
+        // Step 2: Display the result in the dashboard table
+        addTableRowToDashboard(rowData, aiResponse);
+        
+        // Step 3: Update progress bar
         const progress = Math.round(((i + 1) / rows.length) * 100);
         document.getElementById('progressFill').style.width = `${progress}%`;
         document.getElementById('progressText').innerText = `${progress}%`;
@@ -38,9 +43,9 @@ async function startBatchProcessing() {
 }
 
 /**
- * Communicates with the Cloudflare Worker and cleans the raw AI string
+ * Communicates with the Cloudflare Worker (which talks to OpenRouter)
  */
-async function analyzeFeedback(rawText) {
+async function analyzeFeedbackWithAI(rawText) {
     try {
         const response = await fetch(WORKER_URL, {
             method: "POST",
@@ -48,65 +53,74 @@ async function analyzeFeedback(rawText) {
             body: JSON.stringify({ text: rawText })
         });
 
+        if (!response.ok) throw new Error("Worker Error");
+
         const result = await response.json();
-        
-        // Handle different API response structures
-        let rawOutput = result.output || result.response || result[0]?.generated_text || "";
+        let rawContent = result.output || "";
 
-        // --- CLEANING LAYER ---
-        // 1. Remove Markdown backticks if present
-        rawOutput = rawOutput.replace(/```/g, "");
-        // 2. Remove "Result:" or "Analysis:" prefixes sometimes added by local models
-        rawOutput = rawOutput.replace(/^(Result|Analysis|Output):\s*/i, "");
-        // 3. Remove any leading/trailing whitespace
-        rawOutput = rawOutput.trim();
+        // --- CLEANING THE AI OUTPUT ---
+        // Remove markdown code blocks if the AI included them
+        rawContent = rawContent.replace(/```/g, "");
+        // Remove common prefixes like "Result:" or "Analysis:"
+        rawContent = rawContent.replace(/^(Result|Analysis|Output):\s*/i, "").trim();
 
-        // Convert the string "Type: X | Status: Y..." into a JavaScript Object
-        const info = {};
-        rawOutput.split('|').forEach(part => {
-            const pair = part.split(':');
-            if (pair.length >= 2) {
-                const key = pair[0].trim().toLowerCase();
-                const value = pair.slice(1).join(':').trim(); // Join in case there are extra colons
-                info[key] = value;
+        // Parse the structured string: "Type: X | Status: Y | Action: Z"
+        const parsedData = {};
+        rawContent.split('|').forEach(segment => {
+            const parts = segment.split(':');
+            if (parts.length >= 2) {
+                const key = parts[0].trim().toLowerCase();
+                const value = parts.slice(1).join(':').trim();
+                parsedData[key] = value;
             }
         });
 
         return {
-            type: info.type || "General",
-            status: info.status || "Check Needed",
-            aspect: info.aspect || "Review",
-            action: info.action || "Evaluate quality",
-            visual: info.visual_edit || "none"
+            type: parsedData.type || "General",
+            status: parsedData.status || "Review",
+            aspect: parsedData.aspect || "Quality",
+            action: parsedData.action || "Evaluate feedback",
+            visual: parsedData.visual_edit || "none"
         };
-    } catch (e) {
-        return { type: "N/A", status: "Offline", aspect: "Error", action: "Check Connection", visual: "none" };
+
+    } catch (error) {
+        console.error("Connection Failed:", error);
+        return { 
+            type: "Offline", 
+            status: "Error", 
+            aspect: "N/A", 
+            action: "Check Worker/API Token", 
+            visual: "none" 
+        };
     }
 }
 
 /**
- * Injects the cleaned data into the Dashboard Table
+ * Appends a new data row to the HTML table
  */
-function addTableRow(originalText, ai) {
+function addTableRowToDashboard(originalFeedback, ai) {
     const tbody = document.getElementById('tableBody');
     const row = document.createElement('tr');
     
-    const isFix = ai.status.toLowerCase().includes("fix");
-    const badgeClass = isFix ? "badge-neg" : "badge-pos";
+    const isFixRequired = ai.status.toLowerCase().includes("fix");
+    const badgeColorClass = isFixRequired ? "badge-neg" : "badge-pos";
     const designIcon = ai.visual !== "none" ? " 🎨" : "";
 
     row.innerHTML = `
         <td>
             <span class="type-tag">${ai.type}</span><br>
-            <span style="color: #64748b; font-size: 0.8rem;">${originalText.substring(0, 70)}...</span>
+            <span style="color: #64748b; font-size: 0.8rem;">${originalFeedback.substring(0, 70)}...</span>
         </td>
-        <td><span class="badge ${badgeClass}">${ai.status}</span></td>
+        <td><span class="badge ${badgeColorClass}">${ai.status}</span></td>
         <td><strong>${ai.aspect}</strong></td>
         <td class="action-text">${ai.action}${designIcon}</td>
     `;
     tbody.appendChild(row);
 }
 
+/**
+ * Handle File Selection Visibility
+ */
 document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('fileInput');
     if (fileInput) {
