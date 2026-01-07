@@ -3,94 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StyleSense - Clothing Feedback Analyzer</title>
+    <title>Brand Intelligence | AI Design Suite</title>
     
-    <!-- SheetJS for reading Excel files -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Required Library for Excel (.xlsx) support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font and Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Professional Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
+        :root {
+            --slate-900: #0f172a;
+            --slate-600: #475569;
+            --indigo-600: #4f46e5;
+            --indigo-50: #eef2ff;
+            --rose-500: #f43f5e;
+            --rose-50: #fff1f2;
+            --emerald-500: #10b981;
+            --emerald-50: #ecfdf5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--slate-900);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        /* HEADER */
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; }
+        p { color: var(--slate-600); font-size: 1.1rem; }
+
+        /* UPLOAD ZONE */
+        .upload-zone {
+            background: var(--card);
+            border: 2px dashed var(--border);
+            border-radius: 24px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        }
+        .upload-zone:hover { 
+            border-color: var(--indigo-600); 
+            background: var(--indigo-50); 
+            transform: translateY(-2px);
+        }
+        .upload-icon { font-size: 48px; display: block; margin-bottom: 15px; }
+        input[type="file"] { display: none; }
+
+        /* CONTROLS */
+        .controls-area {
+            display: none; /* Hidden until file selected */
+            text-align: center;
+            margin: 30px 0;
+            gap: 15px;
+            justify-content: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--slate-900); color: white; box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1); }
+        .btn-primary:hover { background: #1e293b; transform: translateY(-1px); }
+        
+        .btn-report { background: var(--indigo-600); color: white; display: none; }
+        .btn-report:hover { background: #4338ca; }
+
+        /* STATUS & PROGRESS */
+        .status-area {
+            display: none;
+            background: var(--card);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .progress-meta { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; font-size: 0.9rem; }
+        .progress-track { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--indigo-600); width: 0%; transition: width 0.4s ease; }
+
+        /* RESULTS TABLE */
+        .table-container {
+            display: none;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-top: 40px;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { 
+            background: #f8fafc; 
+            padding: 20px; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            color: #64748b; 
+            border-bottom: 1px solid var(--border); 
+            letter-spacing: 0.05em;
+        }
+        td { padding: 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+
+        /* TAGS & BADGES */
+        .type-pill { 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            padding: 4px 8px; 
+            background: var(--indigo-50); 
+            color: var(--indigo-600); 
+            border-radius: 6px; 
+            text-transform: uppercase; 
+        }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+        .status-fix { background: var(--rose-50); color: var(--rose-500); border: 1px solid #fecdd3; }
+        .status-ok { background: var(--emerald-50); color: var(--emerald-500); border: 1px solid #a7f3d0; }
+        
+        .action-cell { font-weight: 600; color: var(--slate-900); display: flex; align-items: center; gap: 8px; }
+        .icon { font-size: 1.1rem; }
+
+        /* ANIMATIONS */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .analyzing-text { color: var(--indigo-600); animation: pulse 1.5s infinite; }
+
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen text-slate-800 bg-slate-50">
+<body>
 
-    <div class="max-w-5xl mx-auto space-y-6">
-        
-        <!-- Header -->
-        <div class="text-center mb-8 pt-4">
-            <h1 class="text-3xl font-bold text-indigo-700 tracking-tight">StyleSense Intelligence</h1>
-            <p class="text-slate-500 mt-2">Upload customer feedback to detect Fabric, Color, and Design trends.</p>
+    <div class="container">
+        <header>
+            <h1>Brand Intelligence AI</h1>
+            <p>Advanced Production Analysis & Design Correction Suite</p>
+        </header>
+
+        <!-- 1. Upload Section -->
+        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+            <span class="upload-icon">📂</span>
+            <h3>Connect Intelligence Source</h3>
+            <p>Upload CSV, JSON, or Excel (.xlsx) feedback files</p>
+            <input type="file" id="fileInput" accept=".csv, .json, .xlsx, .xls">
         </div>
 
-        <!-- Upload & Action -->
-        <div class="glass p-8 rounded-xl shadow-sm flex flex-col items-center justify-center gap-6 bg-white max-w-2xl mx-auto">
-            <div class="w-full text-center">
-                <label class="block text-lg font-bold text-slate-700 mb-4">Upload Feedback File</label>
-                
-                <div class="relative group">
-                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .json, .txt" 
-                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition cursor-pointer border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 p-8 text-center"/>
-                </div>
-                <p class="text-xs text-slate-400 mt-3">Supports Excel (.xlsx), CSV, JSON, or Text files.</p>
-            </div>
-            
-            <button onclick="processData()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3 rounded-lg font-bold shadow-lg shadow-indigo-200 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 whitespace-nowrap text-lg">
-                <span>Start Analysis</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+        <!-- 2. Controls (Hidden until file selected) -->
+        <div class="controls-area" id="controls">
+            <button class="btn btn-primary" onclick="processData()">
+                ⚡ Start Intelligence Analysis
+            </button>
+            <button class="btn btn-report" id="reportBtn" onclick="generateReport()">
+                📄 Export Analysis Report
             </button>
         </div>
 
-        <!-- Progress Bar (Hidden initially) -->
-        <div id="statusArea" style="display: none;" class="glass p-6 rounded-xl shadow-sm fade-in bg-white max-w-4xl mx-auto">
-            <div class="flex justify-between mb-2">
-                <span id="statusLabel" class="font-semibold text-indigo-600 flex items-center gap-2">
-                    <!-- Spinner Icon is injected by JS -->
-                    Initializing...
-                </span>
-                <span id="progressText" class="text-slate-500 font-mono">0%</span>
+        <!-- 3. Progress Status -->
+        <div class="status-area" id="statusArea">
+            <div class="progress-meta">
+                <span id="statusLabel" class="analyzing-text">Initializing AI Engine...</span>
+                <span id="progressText">0%</span>
             </div>
-            <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-                <div id="progressFill" class="bg-indigo-600 h-3 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(79,70,229,0.5)]" style="width: 0%"></div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
             </div>
         </div>
 
-        <!-- Download Report Button (Hidden initially) -->
-        <div class="text-center">
-            <button id="reportBtn" onclick="generateReport()" style="display: none;" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg shadow-lg shadow-emerald-200 transition items-center gap-2 fade-in font-medium mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                Download Report (.txt)
-            </button>
+        <!-- 4. Intelligence Table -->
+        <div class="table-container" id="tableContainer">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Record Intelligence</th>
+                        <th style="width: 15%;">System Status</th>
+                        <th style="width: 15%;">Target Aspect</th>
+                        <th style="width: 25%;">Recommended Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data rows generated by script.js will appear here -->
+                </tbody>
+            </table>
         </div>
-
-        <!-- Results Table (Hidden initially) -->
-        <div id="tableContainer" style="display: none;" class="glass rounded-xl shadow-sm overflow-hidden fade-in border border-slate-200 bg-white max-w-5xl mx-auto">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-1/2">Customer Feedback</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-1/2">AI Analysis</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="bg-white divide-y divide-slate-100 text-sm">
-                        <!-- Rows injected here by script.js -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
-    <!-- LINK TO YOUR EXTERNAL SCRIPT -->
+    <!-- Link to the Core Logic -->
     <script src="script.js"></script>
 </body>
 </html>
