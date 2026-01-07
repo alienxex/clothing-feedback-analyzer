@@ -3,130 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brand Intelligence | Design Analysis System</title>
+    <title>Brand Intelligence | AI Design Suite</title>
+    <!-- Spreadsheet library for .xlsx and .xls support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --slate-900: #0f172a;
-            --slate-800: #1e293b;
-            --slate-400: #94a3b8;
-            --blue-600: #2563eb;
             --indigo-600: #4f46e5;
-            --emerald-500: #10b981;
             --rose-500: #f43f5e;
-            --bg: #fdfdfd;
+            --emerald-500: #10b981;
+            --bg: #f8fafc;
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg);
-            color: var(--slate-800);
+            color: #334155;
             margin: 0;
             padding: 40px 20px;
         }
 
-        .max-w { max-width: 1100px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
 
-        header { text-align: center; margin-bottom: 60px; }
-        h1 { font-size: 2.5rem; font-weight: 800; color: var(--slate-900); letter-spacing: -0.03em; margin-bottom: 8px; }
-        header p { color: var(--slate-400); font-size: 1.1rem; }
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-size: 2.5rem; color: var(--slate-900); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; }
+        p { color: #64748b; font-size: 1.1rem; }
 
-        /* Multi-format Upload Area */
-        .drop-zone {
+        /* Professional Upload Area */
+        .upload-zone {
             background: white;
             border: 2px dashed #e2e8f0;
             border-radius: 24px;
-            padding: 80px 40px;
+            padding: 60px 20px;
             text-align: center;
-            transition: all 0.3s ease;
             cursor: pointer;
+            transition: 0.3s;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
         }
-        .drop-zone:hover { border-color: var(--indigo-600); background: #f8fafc; transform: translateY(-2px); }
-        .drop-zone h3 { font-size: 1.4rem; margin-bottom: 10px; }
-        .drop-zone p { color: var(--slate-400); font-size: 0.95rem; }
+        .upload-zone:hover { border-color: var(--indigo-600); background: #f1f5f9; }
+        .upload-icon { font-size: 48px; display: block; margin-bottom: 15px; }
 
-        #fileInput { display: none; }
+        input[type="file"] { display: none; }
 
         /* Controls */
-        .controls { display: none; text-align: center; margin: 30px 0; gap: 15px; justify-content: center; }
+        .controls-area {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+            gap: 15px;
+            justify-content: center;
+        }
+
         .btn {
-            padding: 14px 32px;
+            padding: 14px 28px;
             border-radius: 12px;
             font-weight: 700;
             cursor: pointer;
-            transition: 0.2s;
             border: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            transition: 0.2s;
+            font-size: 0.95rem;
         }
         .btn-primary { background: var(--slate-900); color: white; }
-        .btn-primary:hover { background: black; }
         .btn-report { background: var(--indigo-600); color: white; display: none; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        /* Real-time Status */
-        .analysis-status { display: none; margin: 40px 0; }
-        .progress-meta { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; }
-        .progress-track { height: 12px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-600), var(--indigo-600)); width: 0%; transition: width 0.4s ease; }
+        /* Status & Progress */
+        .status-area {
+            display: none;
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+        .progress-meta { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; font-size: 0.9rem; }
+        .progress-track { height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--indigo-600); width: 0%; transition: width 0.4s ease; }
 
-        /* Data Intelligence Table */
-        .intel-table-container {
+        /* Results Table */
+        .table-container {
             display: none;
             background: white;
             border-radius: 20px;
-            border: 1px solid #f1f5f9;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
             overflow: hidden;
-            margin-top: 40px;
+            border: 1px solid #f1f5f9;
         }
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: #f8fafc; padding: 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: var(--slate-400); letter-spacing: 0.1em; }
-        td { padding: 20px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; }
-        
-        .type-pill { font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; background: #f1f5f9; color: var(--slate-800); text-transform: uppercase; }
-        .status-badge { font-weight: 700; font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; }
-        .status-fix { background: #fff1f2; color: var(--rose-500); }
-        .status-ok { background: #f0fdf4; color: var(--emerald-500); }
-        
-        .action-cell { font-weight: 600; color: var(--slate-900); display: flex; align-items: center; gap: 8px; }
-        .icon { font-size: 1.2rem; }
+        th { background: #f8fafc; padding: 20px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; border-bottom: 1px solid #f1f5f9; }
+        td { padding: 20px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; vertical-align: top; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .analyzing-text { animation: pulse 1.5s infinite; color: var(--indigo-600); }
+        .type-pill { font-size: 0.65rem; font-weight: 800; padding: 3px 8px; background: #eff6ff; color: var(--indigo-600); border-radius: 4px; text-transform: uppercase; }
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .status-fix { background: #fee2e2; color: var(--rose-500); }
+        .status-ok { background: #dcfce7; color: var(--emerald-500); }
+        
+        .analyzing-text { color: var(--indigo-600); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="max-w">
+    <div class="container">
         <header>
             <h1>Brand Intelligence AI</h1>
-            <p>Advanced Design Correction & Production Analysis Suite</p>
+            <p>Unified Analysis Suite for Multi-Format Collection Data</p>
         </header>
 
-        <!-- Dynamic Upload Area -->
-        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-            <span class="icon">📦</span>
-            <h3>Connect Brand Data</h3>
-            <p>Supports CSV, JSON, and Excel (.xlsx) formats</p>
-            <input type="file" id="fileInput" accept=".csv, .json, .xlsx">
+        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+            <span class="upload-icon">📄</span>
+            <h3>Connect Intelligence Source</h3>
+            <p>Drag & Drop or Click to upload CSV, JSON, or Excel</p>
+            <input type="file" id="fileInput" accept=".csv, .json, .xlsx, .xls">
         </div>
 
-        <div class="controls" id="controls">
-            <button class="btn btn-primary" onclick="processData()">
-                <span>⚡</span> Start Intelligence Analysis
-            </button>
-            <button class="btn btn-report" id="reportBtn" onclick="generateReport()">
-                <span>📄</span> Generate Final Analysis Report
-            </button>
+        <div class="controls-area" id="controls">
+            <button class="btn btn-primary" onclick="processData()">⚡ Start AI Analysis</button>
+            <button class="btn btn-report" id="reportBtn" onclick="generateReport()">📄 Export Intelligence Report</button>
         </div>
 
-        <!-- Progress Tracking -->
-        <div class="analysis-status" id="statusArea">
+        <div class="status-area" id="statusArea">
             <div class="progress-meta">
-                <span id="statusLabel" class="analyzing-text">Intelligence Engine Initializing...</span>
+                <span id="statusLabel" class="analyzing-text">Initializing Engine...</span>
                 <span id="progressText">0%</span>
             </div>
             <div class="progress-track">
@@ -134,15 +133,14 @@
             </div>
         </div>
 
-        <!-- Intelligence Table -->
-        <div class="intel-table-container" id="tableContainer">
+        <div class="table-container" id="tableContainer">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 40%">Collection Intelligence</th>
-                        <th style="width: 15%">Status</th>
-                        <th style="width: 15%">Aspect</th>
-                        <th style="width: 30%">Engineering Action</th>
+                        <th style="width: 45%;">Record Intelligence</th>
+                        <th style="width: 15%;">System Status</th>
+                        <th style="width: 15%;">Target Aspect</th>
+                        <th style="width: 25%;">Recommended Action</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
