@@ -3,200 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StyleSense Intelligence | Admin Dashboard</title>
+    <title>Brand Feedback Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Modern UI Styling */
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #f8fafc;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --card-bg: #ffffff;
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
         }
-
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: var(--primary);
-        }
-
-        .header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-        }
-
-        /* Upload Section */
-        .upload-area {
-            border: 2px dashed #cbd5e1;
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            transition: all 0.3s ease;
-            background: #fdfdfd;
-        }
-
-        .upload-area:hover {
-            border-color: var(--primary);
-            background: #f5f3ff;
-        }
-
-        input[type="file"] {
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s ease;
-        }
-
-        button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        #status {
-            margin-top: 15px;
-            text-align: center;
-            font-weight: 500;
-            min-height: 24px;
-        }
-
-        /* Results Table */
-        .table-container {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            display: none; /* Hidden until data arrives */
-        }
-
-        th {
-            background-color: #f1f5f9;
-            color: #475569;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.05em;
-            padding: 15px;
-            text-align: left;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* Priority Badges */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .high { background-color: #fee2e2; color: #991b1b; }
-        .medium { background-color: #fef3c7; color: #92400e; }
-        .low { background-color: #dcfce7; color: #166534; }
-
-        footer {
-            margin-top: 40px;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
 
-    <div class="container">
-        <div class="header">
-            <h1>StyleSense Intelligence</h1>
-            <p>AI-Powered Feedback Batch Analyzer</p>
-        </div>
+    <!-- Main Container -->
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-slate-900 mb-2">
+                <i class="fa-solid fa-shirt text-indigo-600 mr-2"></i> Brand Feedback Analyzer
+            </h1>
+            <p class="text-slate-500">AI-Powered insights for Zip, Fabric, Design, Quality & Colour</p>
+        </header>
 
-        <div class="card">
-            <div class="upload-area">
-                <label for="filePicker" style="display: block; margin-bottom: 10px; font-weight: bold; color: #475569;">
-                    Select Feedback File (CSV or Text)
-                </label>
-                <input type="file" id="filePicker" accept=".csv, .txt">
+        <!-- Input Section -->
+        <div class="glass-panel rounded-2xl shadow-lg p-6 mb-8">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Upload Feedback File (.txt) or Paste Text</label>
+                
+                <!-- File Upload -->
+                <div class="flex items-center justify-center w-full mb-4">
+                    <label for="file-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+                            <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-slate-500">TXT files only</p>
+                        </div>
+                        <input id="file-upload" type="file" accept=".txt" class="hidden" />
+                    </label>
+                </div>
+
+                <!-- Text Area -->
+                <textarea id="feedback-input" rows="4" class="block p-4 w-full text-sm text-slate-900 bg-white rounded-lg border border-slate-300 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Or paste customer reviews/emails here..."></textarea>
             </div>
-            
-            <button onclick="processData()" style="margin-top: 20px;">
-                Run Batch Analysis ✓
+
+            <button id="analyze-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2 shadow-md">
+                <span id="btn-text">Analyze Feedback</span>
+                <i id="btn-icon" class="fa-solid fa-wand-magic-sparkles"></i>
+                <!-- Spinner (Hidden by default) -->
+                <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
             </button>
-
-            <div id="status">Waiting for input...</div>
+            <p id="error-msg" class="text-red-500 text-sm mt-2 hidden text-center"></p>
         </div>
 
-        <div class="card" id="resultCard" style="display: none;">
-            <div class="table-container">
-                <table id="resultTable">
-                    <thead>
-                        <tr>
-                            <th>Cloth ID</th>
-                            <th>Quality</th>
-                            <th>Fabric</th>
-                            <th>Delivery</th>
-                            <th>Required Updates</th>
-                            <th>Priority</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        </tbody>
-                </table>
+        <!-- Results Section (Hidden initially) -->
+        <div id="results-container" class="hidden space-y-6">
+            
+            <!-- Summary & Sentiment -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Sentiment Card -->
+                <div class="bg-white rounded-xl shadow-md p-6 border-l-4" id="sentiment-card">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Overall Sentiment</h3>
+                    <div class="flex items-center gap-3">
+                        <span id="sentiment-icon" class="text-3xl"></span>
+                        <span id="sentiment-text" class="text-2xl font-bold text-slate-800">--</span>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="md:col-span-2 bg-white rounded-xl shadow-md p-6 border-l-4 border-indigo-500">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Executive Summary</h3>
+                    <p id="summary-text" class="text-slate-700 font-medium leading-relaxed">--</p>
+                </div>
+            </div>
+
+            <!-- Actionable Insights -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-yellow-500"></i> Actionable Insights
+                </h3>
+                <ul id="insights-list" class="space-y-3">
+                    <!-- List items injected by JS -->
+                </ul>
+            </div>
+
+            <!-- Detailed Breakdown Grid -->
+            <h3 class="text-xl font-bold text-slate-800 mt-8 mb-4">Detailed Category Analysis</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Card Template (Cloned by JS for each category) -->
+                <!-- 1. Zip -->
+                <div id="card-zip" class="bg-white rounded-xl shadow-sm p-5 border border-slate-100 transition hover:shadow-md">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                                <i class="fa-solid fa-link"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-700">Zip / Fasteners</h4>
+                        </div>
+                        <span class="status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500">Analyzing...</span>
+                    </div>
+                    <p class="detail-text text-sm text-slate-600">Waiting for data...</p>
+                </div>
+
+                <!-- 2. Fabric -->
+                <div id="card-fabric" class="bg-white rounded-xl shadow-sm p-5 border border-slate-100 transition hover:shadow-md">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                                <i class="fa-solid fa-scroll"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-700">Fabric</h4>
+                        </div>
+                        <span class="status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500">Analyzing...</span>
+                    </div>
+                    <p class="detail-text text-sm text-slate-600">Waiting for data...</p>
+                </div>
+
+                <!-- 3. Design -->
+                <div id="card-design" class="bg-white rounded-xl shadow-sm p-5 border border-slate-100 transition hover:shadow-md">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                                <i class="fa-solid fa-pen-ruler"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-700">Design & Fit</h4>
+                        </div>
+                        <span class="status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500">Analyzing...</span>
+                    </div>
+                    <p class="detail-text text-sm text-slate-600">Waiting for data...</p>
+                </div>
+
+                <!-- 4. Quality -->
+                <div id="card-quality" class="bg-white rounded-xl shadow-sm p-5 border border-slate-100 transition hover:shadow-md">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                                <i class="fa-solid fa-medal"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-700">Quality</h4>
+                        </div>
+                        <span class="status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500">Analyzing...</span>
+                    </div>
+                    <p class="detail-text text-sm text-slate-600">Waiting for data...</p>
+                </div>
+
+                <!-- 5. Colour -->
+                <div id="card-colour" class="bg-white rounded-xl shadow-sm p-5 border border-slate-100 transition hover:shadow-md">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                                <i class="fa-solid fa-palette"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-700">Colour</h4>
+                        </div>
+                        <span class="status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500">Analyzing...</span>
+                    </div>
+                    <p class="detail-text text-sm text-slate-600">Waiting for data...</p>
+                </div>
+
             </div>
         </div>
-
-        <footer>
-            &copy; 2026 StyleSense Intelligence. Secure Cloudflare + OpenRouter Deployment.
-        </footer>
     </div>
 
-    <script src="script.js"></script>
+    <!-- MAIN SCRIPT LOGIC -->
+    <script>
+        // 1. CONFIGURATION
+        const WORKER_URL = "https://feedbackanalysis.robust9223.workers.dev/";
+
+        // 2. DOM ELEMENTS
+        const fileInput = document.getElementById('file-upload');
+        const textArea = document.getElementById('feedback-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.getElementById('btn-icon');
+        const spinner = document.getElementById('loading-spinner');
+        const resultsContainer = document.getElementById('results-container');
+        const errorMsg = document.getElementById('error-msg');
+
+        // 3. EVENT LISTENERS
+        
+        // Handle File Upload
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                textArea.value = event.target.result; // Fill textarea with file content
+            };
+            reader.readAsText(file);
+        });
+
+        // Handle Analyze Button Click
+        analyzeBtn.addEventListener('click', async () => {
+            const feedbackText = textArea.value.trim();
+
+            if (!feedbackText) {
+                showError("Please enter some feedback or upload a file first.");
+                return;
+            }
+
+            // UI Loading State
+            setLoading(true);
+            hideError();
+            resultsContainer.classList.add('hidden');
+
+            try {
+                // 4. API CALL TO WORKER
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ feedback: feedbackText })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Worker Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // 5. UPDATE UI WITH RESULTS
+                displayResults(data);
+
+            } catch (err) {
+                console.error(err);
+                showError("Analysis failed. Please try again. " + err.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // 6. HELPER FUNCTIONS
+
+        function displayResults(data) {
+            // Unpack JSON
+            const { summary, overall_sentiment, actionable_insights, analysis } = data;
+
+            // A. Summary
+            document.getElementById('summary-text').textContent = summary || "No summary available.";
+
+            // B. Sentiment
+            const sentimentCard = document.getElementById('sentiment-card');
+            const sentimentIcon = document.getElementById('sentiment-icon');
+            const sentimentText = document.getElementById('sentiment-text');
+            
+            sentimentText.textContent = overall_sentiment;
+            
+            if (overall_sentiment.toLowerCase().includes('positive')) {
+                sentimentCard.className = "bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500";
+                sentimentIcon.innerHTML = '<i class="fa-solid fa-face-smile text-green-500"></i>';
+            } else if (overall_sentiment.toLowerCase().includes('negative')) {
+                sentimentCard.className = "bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500";
+                sentimentIcon.innerHTML = '<i class="fa-solid fa-face-frown text-red-500"></i>';
+            } else {
+                sentimentCard.className = "bg-white rounded-xl shadow-md p-6 border-l-4 border-gray-400";
+                sentimentIcon.innerHTML = '<i class="fa-solid fa-face-meh text-gray-400"></i>';
+            }
+
+            // C. Actionable Insights
+            const insightsList = document.getElementById('insights-list');
+            insightsList.innerHTML = ''; // Clear previous
+            actionable_insights.forEach(insight => {
+                const li = document.createElement('li');
+                li.className = "flex items-start gap-2 text-slate-700 text-sm";
+                li.innerHTML = `<i class="fa-solid fa-check-circle text-indigo-500 mt-1"></i> <span>${insight}</span>`;
+                insightsList.appendChild(li);
+            });
+
+            // D. Categories Breakdown
+            updateCategoryCard('zip', analysis.zip);
+            updateCategoryCard('fabric', analysis.fabric);
+            updateCategoryCard('design', analysis.design);
+            updateCategoryCard('quality', analysis.quality);
+            updateCategoryCard('colour', analysis.colour);
+
+            // Show Container with animation
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.classList.add('fade-in');
+        }
+
+        function updateCategoryCard(idSuffix, data) {
+            const card = document.getElementById(`card-${idSuffix}`);
+            const badge = card.querySelector('.status-badge');
+            const details = card.querySelector('.detail-text');
+
+            if (!data) {
+                badge.className = "status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-400";
+                badge.textContent = "N/A";
+                details.textContent = "No data available";
+                return;
+            }
+
+            details.textContent = data.details;
+            
+            // Status Styling
+            const status = data.status.toLowerCase();
+            if (status.includes('good')) {
+                badge.className = "status-badge text-xs px-2 py-1 rounded-full font-bold bg-green-100 text-green-700";
+                badge.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Good';
+            } else if (status.includes('issue')) {
+                badge.className = "status-badge text-xs px-2 py-1 rounded-full font-bold bg-red-100 text-red-700";
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Issue';
+            } else {
+                badge.className = "status-badge text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500";
+                badge.textContent = "Not Mentioned";
+            }
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                btnText.textContent = "Analyzing...";
+                btnIcon.classList.add('hidden');
+                spinner.classList.remove('hidden');
+                analyzeBtn.disabled = true;
+                analyzeBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            } else {
+                btnText.textContent = "Analyze Feedback";
+                btnIcon.classList.remove('hidden');
+                spinner.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMsg.classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
