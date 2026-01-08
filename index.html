@@ -203,7 +203,6 @@
             reader.onload = (event) => {
                 // Pre-clean the text slightly to remove excessive newlines from PDF copy-pastes
                 let rawText = event.target.result;
-                // Replace 3+ newlines with 2, keep structure but condense huge gaps
                 const cleanedText = rawText.replace(/\n{3,}/g, '\n\n');
                 textArea.value = cleanedText; 
             };
@@ -232,23 +231,40 @@
                     body: JSON.stringify({ feedback: feedbackText })
                 });
 
-                const data = await response.json();
+                const rawData = await response.json();
 
-                // CRITICAL FIX: Check if the server sent an error disguised as JSON
-                if (data.error) {
-                    throw new Error("Server Error: " + data.error);
+                // Check for Server Error
+                if (rawData.error) {
+                    throw new Error("Server Error: " + (rawData.error.message || rawData.error));
                 }
-
                 if (!response.ok) {
                     throw new Error(`Worker Error: ${response.status} ${response.statusText}`);
                 }
                 
-                // 5. UPDATE UI WITH RESULTS
-                displayResults(data);
+                // 5. PARSE OPENROUTER RESPONSE (Unwrap the envelope)
+                let finalData = rawData;
+                
+                // Check if this is a standard OpenAI/OpenRouter nested format
+                if (rawData.choices && Array.isArray(rawData.choices) && rawData.choices[0]?.message?.content) {
+                    try {
+                        const contentString = rawData.choices[0].message.content;
+                        finalData = JSON.parse(contentString);
+                    } catch (e) {
+                        console.error("JSON Parse Error on AI content:", e);
+                        throw new Error("AI returned invalid JSON format.");
+                    }
+                } else if (!rawData.summary && !rawData.overall_sentiment) {
+                    // If it's not nested BUT also doesn't have our keys, something is wrong
+                    console.log("Raw Data Received:", rawData);
+                    throw new Error("Received unexpected data format from AI.");
+                }
+
+                // 6. UPDATE UI WITH RESULTS
+                displayResults(finalData);
 
             } catch (err) {
                 console.error(err);
-                showError(err.message); // Show the REAL error message
+                showError(err.message); 
             } finally {
                 setLoading(false);
             }
@@ -259,13 +275,13 @@
         function displayResults(data) {
             // Unpack JSON with defensive checks
             if (!data) {
-                showError("Received empty data from server.");
+                showError("Processed data is empty.");
                 return;
             }
 
             // Default empty analysis if missing
             const analysis = data.analysis || {};
-            const summary = data.summary || "No summary available.";
+            const summary = data.summary || "No summary provided by AI.";
             
             // Safe Sentiment Check
             const overall_sentiment = data.overall_sentiment || "Neutral";
