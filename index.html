@@ -64,7 +64,7 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
             </button>
-            <p id="error-msg" class="text-red-500 text-sm mt-2 hidden text-center"></p>
+            <p id="error-msg" class="text-red-500 font-bold text-sm mt-4 hidden text-center bg-red-50 p-3 rounded-lg border border-red-200"></p>
         </div>
 
         <!-- Results Section (Hidden initially) -->
@@ -201,7 +201,11 @@
 
             const reader = new FileReader();
             reader.onload = (event) => {
-                textArea.value = event.target.result; // Fill textarea with file content
+                // Pre-clean the text slightly to remove excessive newlines from PDF copy-pastes
+                let rawText = event.target.result;
+                // Replace 3+ newlines with 2, keep structure but condense huge gaps
+                const cleanedText = rawText.replace(/\n{3,}/g, '\n\n');
+                textArea.value = cleanedText; 
             };
             reader.readAsText(file);
         });
@@ -228,18 +232,23 @@
                     body: JSON.stringify({ feedback: feedbackText })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Worker Error: ${response.statusText}`);
+                const data = await response.json();
+
+                // CRITICAL FIX: Check if the server sent an error disguised as JSON
+                if (data.error) {
+                    throw new Error("Server Error: " + data.error);
                 }
 
-                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(`Worker Error: ${response.status} ${response.statusText}`);
+                }
                 
                 // 5. UPDATE UI WITH RESULTS
                 displayResults(data);
 
             } catch (err) {
                 console.error(err);
-                showError("Analysis failed. Please try again. " + err.message);
+                showError(err.message); // Show the REAL error message
             } finally {
                 setLoading(false);
             }
